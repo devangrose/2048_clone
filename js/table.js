@@ -32,7 +32,6 @@ function newTile (tile, value) {
     tile.value = value;
     tile.elem.childNodes[0].innerHTML=value;
     tile.height = value / 2;
-    
 }
 
 function leftMove () {
@@ -44,13 +43,7 @@ function leftMove () {
         }
         rows.push(testRow);
     }
-    // prevents adding new tile if board hasn't changed
-    if(slide(rows)){
-        addTile();
-    }
-    if(checkForEndGame()){
-        lose();
-    }
+    postMove(rows);
 }
 
 function rightMove () {
@@ -62,13 +55,7 @@ function rightMove () {
         }
         rows.push(testRow);
     }
-    // prevents adding new tile if board hasn't changed
-    if(slide(rows)){
-        addTile();
-    }
-    if(checkForEndGame()){
-        lose();
-    }
+    postMove(rows);
 }
 
 function upMove () {
@@ -80,13 +67,7 @@ function upMove () {
         }
         rows.push(testRow);
     }
-    // prevents adding new tile if board hasn't changed
-    if(slide(rows)){
-        addTile();
-    }
-    if(checkForEndGame()){
-        lose();
-    }
+    postMove(rows);
 }
 
 function downMove () {
@@ -98,6 +79,10 @@ function downMove () {
         }
         rows.push(testRow);
     }
+    postMove(rows);
+}
+
+function postMove(rows){
     // Prevents adding new tile if board hasn't changed
     if(slide(rows)){
         addTile();
@@ -105,6 +90,7 @@ function downMove () {
     if(checkForEndGame()){
         lose();
     }
+    saveTable();
 }
 
 function slide(rows){
@@ -153,9 +139,11 @@ function setTile(coord, value){
 function checkForEndGame(){
    for(let i = 0; i < GRID_SIZE; i++){
         for(let j = 0; j < GRID_SIZE; j++){
+            // If it finds an empty tile returns false
             if(table[i][j].value == null){
                 return false;
             }
+            // Checks for similar adjacent tiles
             let neighbors = getNeighbors(table[i][j].coordinate);
             for(let k = 0; k < neighbors.length; k++){
                 if(neighbors[k].value == table[i][j].value)
@@ -166,6 +154,7 @@ function checkForEndGame(){
     return true;
 }
 
+// Gets adjacent tiles
 function getNeighbors(coord){
     let toReturn = [];
     if(coord[0] >= 1){
@@ -183,6 +172,7 @@ function getNeighbors(coord){
     return toReturn;
 }
 
+// Increments score and updates DOM as well as local storage
 function updateScore(val){
     var score = $('#score').text();
     score = parseInt(score);
@@ -194,7 +184,56 @@ function updateScore(val){
     }
 }
 
+// Resets table and DOM
 function clearTable(){
     table = [];
     $('tr').remove();
+}
+
+// Saves the table to local storage
+function saveTable(){
+    localTable = [];
+    for(var i = 0; i < GRID_SIZE; i++){
+        for(var j = 0; j < GRID_SIZE; j++){
+            if(table[i][j].value == null){
+                localTable.push(0);
+            }
+            else {
+                localTable.push(table[i][j].value);
+            }
+        }
+    }   
+    localStorage.setItem('table',localTable);
+}
+
+// Loads the table from local storage
+function loadTable(){
+    clearTable();
+    localTable = localStorage.getItem('table').split(',');
+    var GRID_SIZE = Math.sqrt(localTable.length);
+    var index = 0;
+    for(let i = 0; i < GRID_SIZE; i++){
+        let row = document.createElement('tr');
+        row.id = 'row-' + i;
+        let rowjs = [];
+        for(let j = 0; j < GRID_SIZE; j++,index++){
+            let newTile = document.createElement('td');
+            let newDiv = document.createElement('div');
+            newDiv.className = "tile";
+            newTile.appendChild(newDiv);
+            var tile;
+            // Null case
+            if(localTable[index] != 0){
+                tile = new Tile(newTile,localTable[index],[i,j]);
+            }
+            else {
+                tile = new Tile(newTile,null,[i,j]);
+            }
+            newDiv.id = i + ',' + j;
+            rowjs.push(tile);
+            row.append(newTile);
+        }
+        $('#table').append(row);
+        table.push(rowjs);
+    }
 }

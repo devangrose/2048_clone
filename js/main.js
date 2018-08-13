@@ -1,11 +1,39 @@
-function init (){
-    // Initializes table state
-    initTable();
+$(document).ready(function(){
+    init();
+});
 
+function init (){
     // Initializes first high score
 	if(!localStorage.score){
-		localStorage.score = 0;
+		localStorage.setItem('score','0');
 	}
+    if(!localStorage.table){
+        initTable();
+    }
+
+    // Initializes table state
+    loadTable();
+
+    // Initial state
+    $('#tableElement').hide();
+    $('#score-holder').hide();
+    $('#new-game').hide();
+    $('#start').on('click',function(){
+        // Set event listeners
+        setListeners();
+        $('#initial-board').fadeOut(FADE_SPEED,function(){
+            $('#score-holder').show();
+            $('#tableElement').fadeIn(FADE_SPEED);
+            $('#new-game').show();
+        });
+    });
+    // New Game
+    $('#new-game').on('click',function () {
+        clearTable();
+        initTable();
+    });
+    
+
 
     // Pulls high score from localStorage
     $('#high-score').text(localStorage.score);
@@ -21,33 +49,32 @@ function init (){
         initTable();
     });
 
-
-    // Initial state
-    $('#tableElement').hide();
-    $('#score-holder').hide();
-    $('#start').on('click',function(){
-        // Set event listeners
+    // Add listener to play again
+    $('#again').on('click',function (){
+        $('#score').text('0');
+        clearTable();
+        initTable();
+        $('#message-div').hide();
         setListeners();
-        $('#initial-board').fadeOut(FADE_SPEED,function(){
-            $('#score-holder').show();
-            $('#tableElement').fadeIn(FADE_SPEED);
-        });
+        $('#table').fadeIn(FADE_SPEED);
+        $('#new-game').show();
     });
-    
+
     // End game messaging
     $('#message-div').hide();
     $('#keep-playing').hide();
     $('#continue').on('click',function () {
         $('#message-div').fadeOut(FADE_SPEED,function(){
             $('#table').show();
+            $('#new-game').show();
         }); 
         setListeners();
     }); 
 
     // Disables jQuery mobile loading message
     $(".ui-loader").hide();
-
 }
+
 function initTable(){
     // Generate table and add it to DOM
     for(let i = 0; i < GRID_SIZE; i++){
@@ -70,25 +97,37 @@ function initTable(){
     // Add two random tiles
     addTile();
     addTile();
+    saveTable();    
 }
+
 function lose(){
-    sendMessage('You lose!');
     $('#keep-playing').hide();
-    document.onkeydown = null;
+    $('#play-again').show();
+    $('#new-game').hide();
+    sendMessage('You lose!');
+    clearTable();
+    initTable();
+    removeListeners();
 }
+
 function winGame(){
     sendMessage('You win!');
+    $('#play-again').hide();
+    $('#keep-playing').show();
+    $('#new-game').hide();
     setTimeout(function () {
-        $('#keep-playing').fadeIn(200);
+    $('#keep-playing').fadeIn(200);
     },FADE_SPEED * 2);
-    document.onkeydown = null;
+    removeListeners();
 }
+
 function sendMessage(message){
     $('#table').fadeOut(FADE_SPEED,function(){
         $('#message').text(message);
         $('#message-div').fadeIn(200);
     });
 }
+
 function setListeners(){
     // Arrow key listeners
     document.onkeydown = function(e) {
@@ -125,6 +164,20 @@ function setListeners(){
         downMove();
     });
 }
-$(document).ready(function(){
-    init();
-});
+
+function removeListeners() {
+    document.onkeydown = null;
+    // Mobile listeners
+    $('body').off('swipeleft',function(){
+        leftMove();
+    });
+    $('body').off('swiperight',function(){
+        rightMove();
+    });
+    $('body').off('swipeup',function(){
+        upMove();
+    });
+    $('body').off('swipedown',function(){
+        downMove();
+    });
+}
